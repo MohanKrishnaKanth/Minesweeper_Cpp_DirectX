@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics.h"
+#include "Sound.h"
 
 class Minefield
 {
@@ -34,12 +35,15 @@ private:
 		bool IsRevealed() const;
 		void Reveal();
 
+
+
+
 		bool IsFlagged() const;
 		void Flag();
 
 		int neighbourBombs = -1;
 		void SetNeighbourBombCount(int bombCount);
-
+		bool NoNeighbourBombs();
 
 	};
 
@@ -47,16 +51,21 @@ private:
 	Tile& GetTileInArray(const Vec2i& pos) ;
 	const Tile& GetTileInArray(const Vec2i& pos) const ;
 	bool isGameWin();
+	Sound gameoverSfx = Sound({ L"Sounds\\Gameover.wav" });
 
 public:
 	Minefield(const Vec2i center);
 	void Draw(Graphics& gfx) const;
 	RectI GetFieldRect() const;
 	void RevealOnClick(const Vec2i& screenPos);
+	void RevealRecursive(const Vec2i& gridPos);
+
+	void RevealTileAndCheckRecursion(const Vec2i& gridPos);
+
 	void FlagOnClick(const Vec2i& screenPos);
 	const Vec2i ScreenToGrid(const Vec2i& screenPos);
 	int CalculateNeighbourBombs(const Vec2i& gridPos);
-	void Reset(Graphics& gfx);
+
 
 public:
 	Vec2i padding;
@@ -68,7 +77,7 @@ private:
 	static constexpr int height = 16;
 	Tile totalTiles[width*height];
 	static constexpr int borderThickness = 8;
-	static constexpr int totalBombs = 20;
+	static constexpr int totalBombs = 25;
 
 
 };

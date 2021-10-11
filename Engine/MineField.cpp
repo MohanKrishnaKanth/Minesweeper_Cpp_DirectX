@@ -140,10 +140,15 @@ void Minefield::Tile::SetNeighbourBombCount(int bombCount)
 	neighbourBombs = bombCount;
 }
 
+bool Minefield::Tile::NoNeighbourBombs()
+{
+	return neighbourBombs == 0;
+}
+
 int Minefield::CalculateNeighbourBombs(const Vec2i& gridPos) 
 {
 	int count = 0;
-	using namespace std;
+
 	const int yStart =  max(0, gridPos.y - 1);
 	const int yEnd = min(height - 1, gridPos.y + 1);
 	const int xStart = max(0, gridPos.x - 1);
@@ -194,8 +199,7 @@ Minefield::Minefield(const Vec2i center)
 {
 	assert(totalBombs > 0 && totalBombs < width * height);
 	std::random_device rd;
-	std::seed_seq seed{ rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd() };
-	std::default_random_engine re(seed);
+	std::default_random_engine re(rd());
 	std::uniform_int_distribution<int> xDist(0, width - 1);
 	std::uniform_int_distribution<int> yDist(0, height - 1);
 
@@ -265,22 +269,48 @@ void Minefield::RevealOnClick(const Vec2i& screenPos)
 	if (gameState==GameState::Playing)
 	{
 		const Vec2i gridpos = ScreenToGrid(screenPos - padding);
-		if (!GetTileInArray(gridpos).IsRevealed() && !GetTileInArray(gridpos).IsFlagged())
+		RevealTileAndCheckRecursion(gridpos);
+		if (isGameWin())
 		{
-			GetTileInArray(gridpos).Reveal();
-			if (GetTileInArray(gridpos).HasBomb())
-			{
-				gameState = GameState::GameFail;
-			}
-			else
-			{
-				if (isGameWin())
-				{
-					gameState = GameState::GameWon;
-				}
-			}
+			gameState = GameState::GameWon;
+		}
+
+	}
+}
+
+void Minefield::RevealTileAndCheckRecursion(const Vec2i& gridPos)
+{
+	Tile& currentTile = GetTileInArray(gridPos);
+	if (!currentTile.IsRevealed() && !currentTile.IsFlagged())
+	{
+		currentTile.Reveal();
+		if (currentTile.HasBomb())
+		{
+			gameState = GameState::GameFail;
+			gameoverSfx.Play();
+		}
+		else if (currentTile.NoNeighbourBombs())
+		{
+			RevealRecursive(gridPos);
 		}
 	}
+}
+
+void Minefield::RevealRecursive(const Vec2i& gridPos)
+{
+	const int yStart = max(0, gridPos.y - 1);
+	const int yEnd = min(height - 1, gridPos.y + 1);
+	const int xStart = max(0, gridPos.x - 1);
+	const int xEnd = min(width - 1, gridPos.x + 1);
+
+	for (Vec2i pos{ xStart,yStart }; pos.y <= yEnd; ++pos.y)
+	{
+		for (pos.x = xStart; pos.x <= xEnd; ++pos.x)
+		{
+			RevealTileAndCheckRecursion(pos);
+		}
+	}
+
 }
 
 void Minefield::FlagOnClick(const Vec2i & screenPos)
