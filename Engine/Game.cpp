@@ -12,6 +12,11 @@ Game::Game(MainWindow& wnd)
 
 }
 
+Game::~Game()
+{
+	ClearMineField();
+}
+
 void Game::Go()
 {
 	gfx.BeginFrame();
