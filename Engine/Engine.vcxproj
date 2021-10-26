@@ -136,7 +136,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Board.h" />
     <ClInclude Include="CustomException.h" />
     <ClInclude Include="CustomWin.h" />
     <ClInclude Include="Colors.h" />
@@ -150,6 +149,7 @@
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="RectI.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SelectionMenu.h" />
     <ClInclude Include="Sound.h" />
     <ClInclude Include="SoundEffect.h" />
     <ClInclude Include="SpriteCode.h" />

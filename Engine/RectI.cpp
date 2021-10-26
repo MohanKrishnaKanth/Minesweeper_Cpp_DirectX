@@ -39,7 +39,7 @@ bool RectI::IsInside(const Vec2i & pos) const
 	return (pos.x >= left && pos.x < right && pos.y >= top && pos.y < bottom);
 }
 
-RectI RectI::GetExpand(int offset)
+RectI RectI::GetExpand(int offset) const
 {
 	return RectI(left - offset , top - offset , right + offset, bottom + offset);
 }

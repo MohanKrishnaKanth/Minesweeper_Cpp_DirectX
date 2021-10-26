@@ -5,6 +5,7 @@
 #include "SpriteCode.h"
 #include <algorithm>
 
+
 void Minefield::Tile::SpawnBomb()
 {
 	assert(!bomb);
@@ -16,7 +17,7 @@ bool Minefield::Tile::HasBomb() const
 	return bomb;
 }
 
-void Minefield::Tile::Draw(const Vec2i& screenPos,int bombCount, GameState state, Graphics& gfx) const
+void Minefield::Tile::Draw(const Vec2i& screenPos, int bombCount, GameState state, Graphics& gfx) const
 {
 	if (state == GameState::Playing || state == GameState::GameWon)
 	{
@@ -51,7 +52,7 @@ void Minefield::Tile::Draw(const Vec2i& screenPos,int bombCount, GameState state
 		}
 	}
 
-	else if(state == GameState::GameFail)
+	else if (state == GameState::GameFail)
 	{
 		switch (tileState)
 		{
@@ -64,8 +65,8 @@ void Minefield::Tile::Draw(const Vec2i& screenPos,int bombCount, GameState state
 			else
 				SpriteCode::DrawTileButton(screenPos, gfx);
 		}
-			
-			break;
+
+		break;
 
 		case Minefield::Revealed:
 		{
@@ -100,7 +101,7 @@ void Minefield::Tile::Draw(const Vec2i& screenPos,int bombCount, GameState state
 			break;
 		}
 
-		
+
 	}
 }
 
@@ -128,7 +129,7 @@ void Minefield::Tile::Flag()
 	{
 		tileState = TileState::Flagged;
 	}
-	else if(tileState = TileState::Flagged)
+	else if (tileState = TileState::Flagged)
 	{
 		tileState = TileState::Hidden;
 	}
@@ -145,11 +146,11 @@ bool Minefield::Tile::NoNeighbourBombs()
 	return neighbourBombs == 0;
 }
 
-int Minefield::CalculateNeighbourBombs(const Vec2i& gridPos) 
+int Minefield::CalculateNeighbourBombs(const Vec2i& gridPos)
 {
 	int count = 0;
 
-	const int yStart =  max(0, gridPos.y - 1);
+	const int yStart = max(0, gridPos.y - 1);
 	const int yEnd = min(height - 1, gridPos.y + 1);
 	const int xStart = max(0, gridPos.x - 1);
 	const int xEnd = min(width - 1, gridPos.x + 1);
@@ -167,17 +168,45 @@ int Minefield::CalculateNeighbourBombs(const Vec2i& gridPos)
 	return count;
 }
 
+void Minefield::SetBoardSize(const enum SelectionMenu::Size s, const Vec2i center)
+{
+	switch (s)
+	{
+	case SelectionMenu::Size::Small:
+	{
+		width = 10;
+		height = 5;
+		break;
+	}
+	case SelectionMenu::Size::Medium:
+	{
+		width = 20;
+		height = 10;
+		break;
+	}
+	case SelectionMenu::Size::Large:
+	{
+		width = 40;
+		height = 20;
+		break;
+	}
+
+	}
+
+	padding = { center - Vec2i(width * SpriteCode::tileSize + borderThickness, height * SpriteCode::tileSize + borderThickness) / 2 };
+}
+
 
 
 bool Minefield::isGameWin()
 {
-	for (const Tile& t : totalTiles)
+	for (const Tile* t = totalTiles; t < &totalTiles[width * height] - 1; t++)
 	{
-		if (t.HasBomb() && !t.IsFlagged())
+		if (t->HasBomb() && !t->IsFlagged())
 		{
-			return false;		
+			return false;
 		}
-		else if(!t.HasBomb() && !t.IsRevealed())
+		else if (!t->HasBomb() && !t->IsRevealed())
 		{
 			return false;
 		}
@@ -185,7 +214,7 @@ bool Minefield::isGameWin()
 	return true;
 }
 
-Minefield::Tile& Minefield::GetTileInArray(const Vec2i& pos) 
+Minefield::Tile& Minefield::GetTileInArray(const Vec2i& pos)
 {
 	return totalTiles[pos.y * width + pos.x];
 }
@@ -194,23 +223,29 @@ const Minefield::Tile& Minefield::GetTileInArray(const Vec2i& pos) const
 	return totalTiles[pos.y * width + pos.x];
 }
 
-Minefield::Minefield(const Vec2i center)
-	:padding(center - Vec2i(width * SpriteCode::tileSize , height * SpriteCode::tileSize) / 2)
+Minefield::Minefield(const enum SelectionMenu::Size s, const Vec2i center)
 {
-	assert(totalBombs > 0 && totalBombs < width * height);
+	SetBoardSize(s, center);
+
 	std::random_device rd;
 	std::default_random_engine re(rd());
 	std::uniform_int_distribution<int> xDist(0, width - 1);
 	std::uniform_int_distribution<int> yDist(0, height - 1);
+	std::uniform_int_distribution<int> bDist(width, (width * height) / 2);
+
+	assert(totalTiles == nullptr);
+
+	this->totalTiles = new Tile[width * height];
+
+	totalBombs = bDist(re);
 
 	for (int i = 0; i < totalBombs; ++i)
 	{
-		Vec2i spawnPos; 
+		Vec2i spawnPos;
 		do
 		{
 			spawnPos = { xDist(re), yDist(re) };
-		}
-		while (GetTileInArray(spawnPos).HasBomb());
+		} while (GetTileInArray(spawnPos).HasBomb());
 
 		GetTileInArray(spawnPos).SpawnBomb();
 	}
@@ -223,50 +258,49 @@ Minefield::Minefield(const Vec2i center)
 		}
 	}
 
+	gameState = GameState::Playing;
 }
 
-void Minefield::Draw(Graphics & gfx) const
+Minefield::~Minefield()
 {
-	if (gameState == GameState::Title)
+	delete[] this-> totalTiles;
+	totalTiles = nullptr;
+}
+
+void Minefield::Draw(Graphics& gfx) const
+{
+
+	gfx.DrawRectWithRectI(GetFieldRect().GetExpand(borderThickness), Colors::Blue);
+	gfx.DrawRectWithRectI(GetFieldRect(), SpriteCode::baseColor);
+
+	for (Vec2i gridPos = { 0 , 0 }; gridPos.y < height; ++gridPos.y)
 	{
-		SpriteCode::DrawTitle(gfx.GetRectOfScreenSize().GetCenter() - Vec2i(125,61) /* width and height of title is 250,122 */ , gfx);
-	}
-
-	else
-	{
-		gfx.DrawRectWithRectI(GetFieldRect().GetExpand(borderThickness), Colors::Blue );
-		gfx.DrawRectWithRectI(GetFieldRect(), SpriteCode::baseColor);
-
-		for (Vec2i gridPos = { 0 , 0 }; gridPos.y < height; ++gridPos.y)
+		for (gridPos.x = 0; gridPos.x < width; ++gridPos.x)
 		{
-			for (gridPos.x = 0; gridPos.x < width; ++gridPos.x)
-			{
-				const Tile currentTile = GetTileInArray(gridPos);
-				currentTile.Draw(gridPos * SpriteCode::tileSize + padding, currentTile.neighbourBombs, gameState, gfx);
-			}
-		}
-
-		if (gameState == GameState::GameWon)
-		{
-			SpriteCode::DrawWon(Vec2i(350, 450), gfx);
-		}
-		else if (gameState == GameState::GameFail)
-		{
-			SpriteCode::DrawGameover(Vec2i(390, 450), gfx);
+			const Tile currentTile = GetTileInArray(gridPos);
+			currentTile.Draw(gridPos * SpriteCode::tileSize + padding, currentTile.neighbourBombs, gameState, gfx);
 		}
 	}
 
-	
+	if (gameState == GameState::GameWon)
+	{
+		SpriteCode::DrawWon(Vec2i(350, 450), gfx);
+	}
+	else if (gameState == GameState::GameFail)
+	{
+		SpriteCode::DrawGameover(Vec2i(390, 450), gfx);
+	}
+
 }
 
 RectI Minefield::GetFieldRect() const
 {
-	return RectI(padding, width * SpriteCode::tileSize , height * SpriteCode::tileSize );
+	return RectI(padding, width * SpriteCode::tileSize, height * SpriteCode::tileSize);
 }
 
 void Minefield::RevealOnClick(const Vec2i& screenPos)
 {
-	if (gameState==GameState::Playing)
+	if (gameState == GameState::Playing)
 	{
 		const Vec2i gridpos = ScreenToGrid(screenPos - padding);
 		RevealTileAndCheckRecursion(gridpos);
@@ -313,9 +347,9 @@ void Minefield::RevealRecursive(const Vec2i& gridPos)
 
 }
 
-void Minefield::FlagOnClick(const Vec2i & screenPos)
+void Minefield::FlagOnClick(const Vec2i& screenPos)
 {
-	if (gameState==GameState::Playing)
+	if (gameState == GameState::Playing)
 	{
 		const Vec2i gridpos = ScreenToGrid(screenPos - padding);
 		if (!GetTileInArray(gridpos).IsRevealed())
@@ -327,7 +361,7 @@ void Minefield::FlagOnClick(const Vec2i & screenPos)
 
 }
 
-const Vec2i Minefield::ScreenToGrid(const Vec2i & screenPos)
+const Vec2i Minefield::ScreenToGrid(const Vec2i& screenPos)
 {
-	return Vec2i(screenPos/SpriteCode::tileSize);
+	return Vec2i(screenPos / SpriteCode::tileSize);
 }

@@ -5,19 +5,32 @@
 #include "Graphics.h"
 #include "FrameTimer.h"
 #include "MineField.h"
+#include "SelectionMenu.h"
 
 class Game
 {
 public:
-	Game( class MainWindow& wnd );
-	Game( const Game& ) = delete;
-	Game& operator=( const Game& ) = delete;
+	enum MenuSelection
+	{
+		Title,
+		LevelMenu,
+		GameStarted
+	};
+
+
+public:
+	Game(class MainWindow& wnd);
+	Game(const Game&) = delete;
+	Game& operator=(const Game&) = delete;
 	void Go();
 private:
 	void ComposeFrame();
 	void UpdateModel();
 	/********************************/
 	/*  User Functions              */
+
+	void ClearMineField();
+	void CreateMineField(SelectionMenu::Size size);
 	/********************************/
 private:
 	MainWindow& wnd;
@@ -25,14 +38,13 @@ private:
 	/********************************/
 	/*  User Variables              */
 
-	Minefield field;
-
+	Minefield* field = nullptr;
+	SelectionMenu menu;
 	/********************************/
 
 
 
 	FrameTimer ft;
-
-
+	MenuSelection menuState = MenuSelection::Title;
 
 };

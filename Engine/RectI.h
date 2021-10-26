@@ -13,7 +13,7 @@ public:
 	static RectI FromCenter(const Vec2i& center, int halfwidth, int halfheight);
 	Vec2i GetCenter() const;
 	bool IsInside(const Vec2i& pos) const;
-	RectI GetExpand(int offset);
+	RectI GetExpand(int offset) const;
 
 public:
 	int left;

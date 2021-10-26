@@ -1,6 +1,7 @@
 #pragma once
 #include "Graphics.h"
 #include "Sound.h"
+#include "SelectionMenu.h"
 
 class Minefield
 {
@@ -14,7 +15,6 @@ public:
 
 	enum GameState
 	{
-		Title,
 		Playing,
 		GameWon,
 		GameFail
@@ -54,7 +54,8 @@ private:
 	Sound gameoverSfx = Sound({ L"Sounds\\Gameover.wav" });
 
 public:
-	Minefield(const Vec2i center);
+	Minefield(const enum SelectionMenu::Size s,const Vec2i center);
+	~Minefield();
 	void Draw(Graphics& gfx) const;
 	RectI GetFieldRect() const;
 	void RevealOnClick(const Vec2i& screenPos);
@@ -65,19 +66,19 @@ public:
 	void FlagOnClick(const Vec2i& screenPos);
 	const Vec2i ScreenToGrid(const Vec2i& screenPos);
 	int CalculateNeighbourBombs(const Vec2i& gridPos);
-
+	void SetBoardSize(const enum SelectionMenu::Size s, const Vec2i center);
 
 public:
 	Vec2i padding;
-	GameState gameState = GameState::Title;
+	GameState gameState = GameState::Playing;
 
 
 private:
-	static constexpr int width = 20;
-	static constexpr int height = 16;
-	Tile totalTiles[width*height];
+	int width;
+	int height;
+	Tile *totalTiles = nullptr;
 	static constexpr int borderThickness = 8;
-	static constexpr int totalBombs = 25;
+	int totalBombs;
 
 
 };

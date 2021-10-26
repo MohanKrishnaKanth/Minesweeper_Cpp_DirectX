@@ -27,5 +27,11 @@ public:
 	static void DrawGameover(const Vec2i& pos, Graphics& gfx);
 	static void DrawTitle(const Vec2i& pos, Graphics& gfx);
 	static void DrawTileNumber(const Vec2i& pos,const int count, Graphics& gfx);
+
+	static constexpr int sizeselWidth = 240;
+	static constexpr int sizeselHeight = 56;
+	static void DrawSmall(const Vec2i& pos, Graphics& gfx);
+	static void DrawMedium(const Vec2i& pos, Graphics& gfx);
+	static void DrawLarge(const Vec2i& pos, Graphics& gfx);
 };
 
